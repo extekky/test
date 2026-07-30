@@ -1,0 +1,31 @@
+services:
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: my_backend
+
+    # порт наружу не пробрасываем - доступ только внутри docker сети
+    expose:
+      - "8080"
+    networks:
+      - my_network
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: my_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - my_network
+    restart: unless-stopped
+
+networks:
+  my_network:
+    driver: bridge
