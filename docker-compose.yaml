@@ -9,6 +9,12 @@ services:
     # порт наружу не пробрасываем - доступ только внутри docker сети
     expose:
       - "8080"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
     networks:
       - my_network
     restart: unless-stopped
@@ -19,9 +25,10 @@ services:
       dockerfile: Dockerfile
     container_name: my_nginx
     ports:
-      - "80:80"
+      - "${NGINX_PORT:-80}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     networks:
       - my_network
     restart: unless-stopped

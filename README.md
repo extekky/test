@@ -3,16 +3,25 @@
 Минимальное приложение на Python (`http.server`), спрятанное за nginx как reverse proxy,
 поднимается через Docker Compose.
 
+# Результат 
+
+![](.github/pics/image.png)
+
 ## Структура проекта
 
 ```
 ├── backend/
+│   ├── .dockerignore
 │   ├── Dockerfile
 │   └── app.py
 ├── nginx/
+│   ├── .dockerignore
 │   ├── Dockerfile
 │   └── nginx.conf
-├── docker-compose.yml
+├── .dockerignore
+├── .env
+├── .gitignore
+├── docker-compose.yaml
 └── README.md
 ```
 
@@ -29,7 +38,8 @@ docker compose up --build -d
 Это соберёт два образа (`backend`, `nginx`) и поднимет два контейнера:
 - `my_backend` — Python HTTP сервер, слушает 8080 **только внутри** docker сети
   (порт наружу не пробрасывается)
-- `my_nginx` — nginx, слушает 80 и проксирует запросы на `my_backend`
+- `my_nginx` — nginx, слушает порт из `NGINX_PORT` и проксирует запросы на
+  service name `backend`
 
 ## Как проверить результат
 
@@ -63,7 +73,7 @@ docker compose down
 2. Docker Compose пробрасывает этот порт в контейнер `nginx`.
 3. Nginx (конфиг `nginx/nginx.conf`) принимает запрос на `location /` и
    проксирует его через `upstream backend_upstream` на контейнер `backend`
-   по внутреннему DNS имени `backend:8080` (имя сервиса из `docker-compose.yml`
+   по внутреннему DNS имени `backend:8080` (имя сервиса из `docker-compose.yaml`
    в сети `my_network`).
 4. Backend (`backend/app.py`) — простой Python HTTP-сервер на `http.server`,
    слушает `0.0.0.0:8080` и на любой GET запрос отвечает текстом
@@ -73,8 +83,18 @@ docker compose down
 Backend не имеет прямого доступа снаружи — единственная точка входа в систему
 для внешнего мира это nginx на порту 80.
 
+## Использованные технологии
+
+- Docker
+- Docker Compose
+- Python 3.12 Alpine
+- Python `http.server`
+- Nginx Alpine
+
 ## Ограничения, учтённые в решении
 
 - Используются только Docker и Docker Compose (без Kubernetes).
 - В качестве reverse proxy используется только официальный образ `nginx`.
 - Backend-порт (8080) не публикуется на хост (`expose`, а не `ports`).
+- Backend запускается не от root-пользователя.
+- Порт nginx задаётся через `.env`.
